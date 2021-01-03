@@ -5,9 +5,9 @@ from random import sample, randint
 class Armor(ChestItem):
     def __init__(self):
         super().__init__()
-        self.armors = ['iron_chestplate', 'golden_chestplate', 'iron_boots', 'golden_boots',
-                       'iron_helmet', 'golden_helmet', 'iron_leggings', 'golden_leggings', 'shield']
-        self.id = sample(self.armors, 1)[0]
+        materials = ['iron', 'golden', 'leather', 'chainmail', 'diamond']
+        types = ['chestplate', 'boots', 'helmet', 'leggings']
+        self.id = sample(materials, 1)[0] + '_' + sample(types, 1)[0]
         self.count = 1
 
     def enchant(self):

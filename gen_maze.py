@@ -5,15 +5,18 @@ from Weapon import Weapon
 from Armor import Armor
 from Consumable import Consumable
 from Potion import Potion
+from Bow import Bow
+from Shield import Shield
+from TippedArrow import TippedArrow
 
 
 def generate_chest():
     num_items = randint(1, 24)
     selected = []
-    options = [Weapon, Armor, Consumable, Potion]
+    options = [Weapon, Armor, Consumable, Potion, Bow, Shield, TippedArrow]
     for i in range(num_items):
         o = sample(options, 1)[0]()  # toto mi je luto, pardon
-        if random() < 0.2:
+        if random() < 0.2 or type(o) == Potion:
             o.enchant()
         selected.append(o.generate_item_string(i))
     chest = {'Items': selected}
@@ -89,6 +92,16 @@ def parse_maze(maze: [str], name: str):
         maze_file.write(
             f"fill ~1 ~-1 ~{z_half} ~{x_half} ~-1 ~{z} minecraft:bedrock replace\n")
 
+        # generate ceiling
+        maze_file.write(
+            f"fill ~1 ~4 ~1 ~{x_half} ~4 ~{z_half} minecraft:bedrock replace\n")
+        maze_file.write(
+            f"fill ~{x_half} ~4 ~1 ~{x} ~4 ~{z_half} minecraft:bedrock replace\n")
+        maze_file.write(
+            f"fill ~{x_half} ~4 ~{z_half} ~{x} ~4 ~{z} minecraft:bedrock replace\n")
+        maze_file.write(
+            f"fill ~1 ~4 ~{z_half} ~{x_half} ~4 ~{z} minecraft:bedrock replace\n")
+
         for i, row in enumerate(output):
             for j, val in enumerate(row):
                 if val:
@@ -97,30 +110,33 @@ def parse_maze(maze: [str], name: str):
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:wither_skeleton,HandItems:[{{Count:1,id:golden_axe,tag:{{Enchantments:[{{id:sharpness,lvl:2}}]}}}},{{Count:1,id:shield,tag:{{Enchantments:[{{id:unbreaking,lvl:3}}]}}}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:golden_leggings}},{{Count:1,id:golden_chestplate}},{{Count:1,id:chainmail_helmet}}],CustomName:\"BigMan\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:5,Delay:0,RequiredPlayerRange:20}} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.005:
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:blaze,CustomName:\"Domko\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:20,Delay:0,RequiredPlayerRange:20}} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.01:
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:zombie,HandItems:[{{Count:1,id:stone_sword}},{{}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:leather_leggings}},{{Count:1,id:leather_chestplate,tag:{{display:{{color:8991416}}}}}},{{Count:1,id:creeper_head}}],CustomName:\"Denko\"}}, SpawnRange: 20, SpawnCount: 5, MaxNearbyEntities: 5, Delay: 0, RequiredPlayerRange: 20}} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     else:
                         maze_file.write(
-                            f"fill ~{i+1} ~ ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~ ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                 else:
                     choice = random()
-                    if choice < 0.1:
+                    if choice < 0.01:
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} chest{generate_chest()} replace\n""")
+                    elif choice < 0.05:
+                        maze_file.write(
+                            f"""setblock ~{i+1} ~ ~{j+1} torch replace\n""")
 
         maze_file.write(
             f"fill ~1 ~ ~3 ~3 ~3 ~3 air replace\n")
         maze_file.write(
-            f"fill ~{x} ~ ~{z-3} ~{x - 2} ~3 ~{z - 3} minecraft:glass replace\n")
+            f"fill ~{x} ~ ~{z-3} ~{x-1} ~3 ~{z - 3} minecraft:glass replace\n")
 
     with open(f"{name}_clear.mcfunction", 'w', encoding='utf-8') as clear_maze_file:
         x = len(output)

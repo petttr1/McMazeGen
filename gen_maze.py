@@ -1,13 +1,21 @@
+from Spawners.NonEquippableMob import NonEquippableMob
+from Spawners.EquippableMob import EquippableMob
+from Spawners.Spawner import Spawner
+from Chestitems.TippedArrow import TippedArrow
+from Chestitems.Shield import Shield
+from Chestitems.Bow import Bow
+from Chestitems.Potion import Potion
+from Chestitems.Consumable import Consumable
+from Chestitems.Armor import Armor
+from Chestitems.Weapon import Weapon
 from random import shuffle, randrange, random, choices, randint, sample
 import argparse
 import json
-from Weapon import Weapon
-from Armor import Armor
-from Consumable import Consumable
-from Potion import Potion
-from Bow import Bow
-from Shield import Shield
-from TippedArrow import TippedArrow
+
+import sys
+import os
+sys.path.append('/Chestitems')
+sys.path.append('/Spawners')
 
 
 def generate_chest():
@@ -106,19 +114,23 @@ def parse_maze(maze: [str], name: str):
             for j, val in enumerate(row):
                 if val:
                     choice = random()
+                    if choice < 0.01:
+                        spawner = Spawner()
+                        mob = sample(
+                            [EquippableMob, NonEquippableMob], 1)[0]()
                     if choice < 0.001:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:wither_skeleton,HandItems:[{{Count:1,id:golden_axe,tag:{{Enchantments:[{{id:sharpness,lvl:2}}]}}}},{{Count:1,id:shield,tag:{{Enchantments:[{{id:unbreaking,lvl:3}}]}}}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:golden_leggings}},{{Count:1,id:golden_chestplate}},{{Count:1,id:chainmail_helmet}}],CustomName:\"BigMan\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:5,Delay:0,RequiredPlayerRange:20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
                             f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.005:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:blaze,CustomName:\"Domko\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:20,Delay:0,RequiredPlayerRange:20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
                             f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.01:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:zombie,HandItems:[{{Count:1,id:stone_sword}},{{}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:leather_leggings}},{{Count:1,id:leather_chestplate,tag:{{display:{{color:8991416}}}}}},{{Count:1,id:creeper_head}}],CustomName:\"Denko\"}}, SpawnRange: 20, SpawnCount: 5, MaxNearbyEntities: 5, Delay: 0, RequiredPlayerRange: 20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
                             f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     else:

@@ -1,4 +1,4 @@
-from ChestItem import ChestItem
+from .ChestItem import ChestItem
 from random import sample, randint
 
 

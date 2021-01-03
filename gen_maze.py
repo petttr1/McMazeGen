@@ -1,38 +1,23 @@
-from random import shuffle, randrange, random, choices, randint
+from random import shuffle, randrange, random, choices, randint, sample
 import argparse
 import json
-
-
-def select_items(amount: int, choose_from: [str], count: int):
-    chosen = choices(choose_from, k=amount)
-    return [{'id': c, 'Count': count} for c in chosen]
-
-
-def select_enchantments(choose_from: [str]):
-    return {}
+from Weapon import Weapon
+from Armor import Armor
+from Consumable import Consumable
+from Potion import Potion
 
 
 def generate_chest():
     num_items = randint(1, 24)
-    armors = [
-        'iron_chestplate', 'golden_chestplate', 'iron_boots', 'golden_boots', 'iron_helmet', 'golden_helmet', 'iron_leggings', 'golden_leggings'
-    ]
-    weapons = [
-        'iron_axe', 'golden_axe', 'stone_axe', 'bow', 'shield'
-    ]
-    consumables = [
-        'cooked_beef', 'arrow', 'bread'
-    ]
     selected = []
-    for items, counts in zip([armors, weapons, consumables], [1, 1, randint(1, 10)]):
-        if num_items > 1:
-            amt = randint(1, num_items)
-            num_items -= amt
-            selected.extend(select_items(amt, items, counts))
-    selected_items = [{'Slot': i, 'id': item['id'], 'Count': item['Count'], 'tag':{}}
-                      for i, item in enumerate(selected)]
-    chest = {'Items': selected_items}
-    return json.dumps(chest).replace('\"', '')
+    options = [Weapon, Armor, Consumable, Potion]
+    for i in range(num_items):
+        o = sample(options, 1)[0]()  # toto mi je luto, pardon
+        if random() < 0.2:
+            o.enchant()
+        selected.append(o.generate_item_string(i))
+    chest = {'Items': selected}
+    return json.dumps(chest).replace('\"', '').replace('\'', '\"')
 
 
 def make_maze(w=16, h=8):
@@ -128,7 +113,7 @@ def parse_maze(maze: [str], name: str):
                             f"fill ~{i+1} ~ ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
                 else:
                     choice = random()
-                    if choice < 0.01:
+                    if choice < 0.1:
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} chest{generate_chest()} replace\n""")
 

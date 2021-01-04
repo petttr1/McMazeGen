@@ -1,5 +1,5 @@
 from .SpawnerMob import SpawnerMob
-from random import sample
+from random import sample, randint
 
 
 class EquippableMob(SpawnerMob):

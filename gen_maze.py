@@ -23,10 +23,13 @@ def generate_chest():
     selected = []
     options = [Weapon, Armor, Consumable, Potion, Bow, Shield, TippedArrow]
     for i in range(num_items):
-        o = sample(options, 1)[0]()  # toto mi je luto, pardon
+        o = sample(options, 1)[0]()
         if random() < 0.2 or type(o) == Potion:
             o.enchant()
         selected.append(o.generate_item_string(i))
+    slots = sample([i for i in range(24)], num_items)
+    for item, slot in zip(selected, slots):
+        item['Slot'] = slot
     chest = {'Items': selected}
     return json.dumps(chest).replace('\"', '').replace('\'', '\"')
 
@@ -75,40 +78,53 @@ def parse_maze(maze: [str], name: str):
         output.append(oo)
 
     with open(f"{name}.mcfunction", 'w', encoding='utf-8') as maze_file:
+
         x = len(output)
-        x_half = x // 2
         z = len(output[0])
-        z_half = z // 2
+
+        x_segments = x//20
+        z_segments = z//20
+
+        for x_seg in range(x_segments):
+            for z_seg in range(z_segments):
+                # old maze clear
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~ ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                # generate floor
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~-1 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~-1 ~{(z_seg + 1) * 20} bedrock replace\n")
+                # generate ceiling
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~4 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} bedrock replace\n")
+
+                if (x_seg == 0):
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~ ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                    # generate floor
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~-1 ~{z_seg * 20} ~{x} ~-1 ~{(z_seg + 1) * 20} bedrock replace\n")
+                    # generate ceiling
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~4 ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} bedrock replace\n")
+
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~ ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} air replace\n")
+            # generate floor
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~-1 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~-1 ~{z} bedrock replace\n")
+            # generate ceiling
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~4 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} bedrock replace\n")
 
         # old maze clear
         maze_file.write(
-            f"fill ~1 ~ ~1 ~{x_half} ~3 ~{z_half} air replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~ ~1 ~{x} ~3 ~{z_half} air replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~ ~{z_half} ~{x} ~3 ~{z} air replace\n")
-        maze_file.write(
-            f"fill ~1 ~ ~{z_half} ~{x_half} ~3 ~{z} air replace\n")
-
+            f"fill ~{x_segments * 20} ~ ~{z_segments * 20} ~{x} ~4 ~{z} air replace\n")
         # generate floor
         maze_file.write(
-            f"fill ~1 ~-1 ~1 ~{x_half} ~-1 ~{z_half} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~-1 ~1 ~{x} ~-1 ~{z_half} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~-1 ~{z_half} ~{x} ~-1 ~{z} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~1 ~-1 ~{z_half} ~{x_half} ~-1 ~{z} minecraft:bedrock replace\n")
-
+            f"fill ~{x_segments * 20} ~-1 ~{z_segments * 20} ~{x} ~-1 ~{z} bedrock replace\n")
         # generate ceiling
         maze_file.write(
-            f"fill ~1 ~4 ~1 ~{x_half} ~4 ~{z_half} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~4 ~1 ~{x} ~4 ~{z_half} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~4 ~{z_half} ~{x} ~4 ~{z} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~1 ~4 ~{z_half} ~{x_half} ~4 ~{z} minecraft:bedrock replace\n")
+            f"fill ~{x_segments * 20} ~4 ~{z_segments * 20} ~{x} ~4 ~{z} bedrock replace\n")
 
         for i, row in enumerate(output):
             for j, val in enumerate(row):
@@ -152,17 +168,22 @@ def parse_maze(maze: [str], name: str):
 
     with open(f"{name}_clear.mcfunction", 'w', encoding='utf-8') as clear_maze_file:
         x = len(output)
-        x_half = x // 2
         z = len(output[0])
-        z_half = z // 2
+
+        x_segments = x//20
+        z_segments = z//20
+
+        for x_seg in range(x_segments):
+            for z_seg in range(z_segments):
+                clear_maze_file.write(
+                    f"fill ~{x_seg * 20} ~-1 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                if (x_seg == 0):
+                    clear_maze_file.write(
+                        f"fill ~{x_segments * 20} ~-1 ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} air replace\n")
+            clear_maze_file.write(
+                f"fill ~{x_seg * 20} ~-1 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} air replace\n")
         clear_maze_file.write(
-            f"fill ~1 ~ ~1 ~{x_half} ~3 ~{z_half} air replace\n")
-        clear_maze_file.write(
-            f"fill ~{x_half} ~ ~1 ~{x} ~3 ~{z_half} air replace\n")
-        clear_maze_file.write(
-            f"fill ~{x_half} ~ ~{z_half} ~{x} ~3 ~{z} air replace\n")
-        clear_maze_file.write(
-            f"fill ~1 ~ ~{z_half} ~{x_half} ~3 ~{z} air replace\n")
+            f"fill ~{x_segments * 20} ~-1 ~{z_segments * 20} ~{x} ~4 ~{z} air replace\n")
 
 
 if __name__ == '__main__':

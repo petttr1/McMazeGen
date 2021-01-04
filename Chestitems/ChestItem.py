@@ -8,7 +8,7 @@ class ChestItem(ABC):
 
     @abstractmethod
     def generate_item_string(self, item, slot):
-        return {'Slot': slot, 'id': item.id, 'Count': item.count, 'tag': item.tag}
+        return {'id': item.id, 'Count': item.count, 'tag': item.tag}
 
     @abstractmethod
     def enchant(self):

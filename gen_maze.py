@@ -1,38 +1,37 @@
-from random import shuffle, randrange, random, choices, randint
+from Spawners.NonEquippableMob import NonEquippableMob
+from Spawners.EquippableMob import EquippableMob
+from Spawners.Spawner import Spawner
+from Chestitems.TippedArrow import TippedArrow
+from Chestitems.Shield import Shield
+from Chestitems.Bow import Bow
+from Chestitems.Potion import Potion
+from Chestitems.Consumable import Consumable
+from Chestitems.Armor import Armor
+from Chestitems.Weapon import Weapon
+from random import shuffle, randrange, random, choices, randint, sample
 import argparse
 import json
 
-
-def select_items(amount: int, choose_from: [str], count: int):
-    chosen = choices(choose_from, k=amount)
-    return [{'id': c, 'Count': count} for c in chosen]
-
-
-def select_enchantments(choose_from: [str]):
-    return {}
+import sys
+import os
+sys.path.append('/Chestitems')
+sys.path.append('/Spawners')
 
 
 def generate_chest():
     num_items = randint(1, 24)
-    armors = [
-        'iron_chestplate', 'golden_chestplate', 'iron_boots', 'golden_boots', 'iron_helmet', 'golden_helmet', 'iron_leggings', 'golden_leggings'
-    ]
-    weapons = [
-        'iron_axe', 'golden_axe', 'stone_axe', 'bow', 'shield'
-    ]
-    consumables = [
-        'cooked_beef', 'arrow', 'bread'
-    ]
     selected = []
-    for items, counts in zip([armors, weapons, consumables], [1, 1, randint(1, 10)]):
-        if num_items > 1:
-            amt = randint(1, num_items)
-            num_items -= amt
-            selected.extend(select_items(amt, items, counts))
-    selected_items = [{'Slot': i, 'id': item['id'], 'Count': item['Count'], 'tag':{}}
-                      for i, item in enumerate(selected)]
-    chest = {'Items': selected_items}
-    return json.dumps(chest).replace('\"', '')
+    options = [Weapon, Armor, Consumable, Potion, Bow, Shield, TippedArrow]
+    for i in range(num_items):
+        o = sample(options, 1)[0]()
+        if random() < 0.2 or type(o) == Potion:
+            o.enchant()
+        selected.append(o.generate_item_string(i))
+    slots = sample([i for i in range(24)], num_items)
+    for item, slot in zip(selected, slots):
+        item['Slot'] = slot
+    chest = {'Items': selected}
+    return json.dumps(chest).replace('\"', '').replace('\'', '\"')
 
 
 def make_maze(w=16, h=8):
@@ -79,77 +78,112 @@ def parse_maze(maze: [str], name: str):
         output.append(oo)
 
     with open(f"{name}.mcfunction", 'w', encoding='utf-8') as maze_file:
+
         x = len(output)
-        x_half = x // 2
         z = len(output[0])
-        z_half = z // 2
+
+        x_segments = x//20
+        z_segments = z//20
+
+        for x_seg in range(x_segments):
+            for z_seg in range(z_segments):
+                # old maze clear
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~ ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                # generate floor
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~-1 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~-1 ~{(z_seg + 1) * 20} bedrock replace\n")
+                # generate ceiling
+                maze_file.write(
+                    f"fill ~{x_seg * 20} ~4 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} bedrock replace\n")
+
+                if (x_seg == 0):
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~ ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                    # generate floor
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~-1 ~{z_seg * 20} ~{x} ~-1 ~{(z_seg + 1) * 20} bedrock replace\n")
+                    # generate ceiling
+                    maze_file.write(
+                        f"fill ~{x_segments * 20} ~4 ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} bedrock replace\n")
+
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~ ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} air replace\n")
+            # generate floor
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~-1 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~-1 ~{z} bedrock replace\n")
+            # generate ceiling
+            maze_file.write(
+                f"fill ~{x_seg * 20} ~4 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} bedrock replace\n")
 
         # old maze clear
         maze_file.write(
-            f"fill ~1 ~ ~1 ~{x_half} ~3 ~{z_half} air replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~ ~1 ~{x} ~3 ~{z_half} air replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~ ~{z_half} ~{x} ~3 ~{z} air replace\n")
-        maze_file.write(
-            f"fill ~1 ~ ~{z_half} ~{x_half} ~3 ~{z} air replace\n")
-
+            f"fill ~{x_segments * 20} ~ ~{z_segments * 20} ~{x} ~4 ~{z} air replace\n")
         # generate floor
         maze_file.write(
-            f"fill ~1 ~-1 ~1 ~{x_half} ~-1 ~{z_half} minecraft:bedrock replace\n")
+            f"fill ~{x_segments * 20} ~-1 ~{z_segments * 20} ~{x} ~-1 ~{z} bedrock replace\n")
+        # generate ceiling
         maze_file.write(
-            f"fill ~{x_half} ~-1 ~1 ~{x} ~-1 ~{z_half} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~{x_half} ~-1 ~{z_half} ~{x} ~-1 ~{z} minecraft:bedrock replace\n")
-        maze_file.write(
-            f"fill ~1 ~-1 ~{z_half} ~{x_half} ~-1 ~{z} minecraft:bedrock replace\n")
+            f"fill ~{x_segments * 20} ~4 ~{z_segments * 20} ~{x} ~4 ~{z} bedrock replace\n")
 
         for i, row in enumerate(output):
             for j, val in enumerate(row):
                 if val:
                     choice = random()
+                    if choice < 0.01:
+                        spawner = Spawner()
+                        mob = sample(
+                            [EquippableMob, NonEquippableMob], 1)[0]()
                     if choice < 0.001:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:wither_skeleton,HandItems:[{{Count:1,id:golden_axe,tag:{{Enchantments:[{{id:sharpness,lvl:2}}]}}}},{{Count:1,id:shield,tag:{{Enchantments:[{{id:unbreaking,lvl:3}}]}}}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:golden_leggings}},{{Count:1,id:golden_chestplate}},{{Count:1,id:chainmail_helmet}}],CustomName:\"BigMan\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:5,Delay:0,RequiredPlayerRange:20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.005:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:blaze,CustomName:\"Domko\"}},SpawnRange:20,SpawnCount:5,MaxNearbyEntities:20,Delay:0,RequiredPlayerRange:20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     elif choice < 0.01:
                         maze_file.write(
-                            f"""setblock ~{i+1} ~ ~{j+1} spawner{{SpawnData:{{id:zombie,HandItems:[{{Count:1,id:stone_sword}},{{}}],ArmorItems:[{{Count:1,id:iron_boots}},{{Count:1,id:leather_leggings}},{{Count:1,id:leather_chestplate,tag:{{display:{{color:8991416}}}}}},{{Count:1,id:creeper_head}}],CustomName:\"Denko\"}}, SpawnRange: 20, SpawnCount: 5, MaxNearbyEntities: 5, Delay: 0, RequiredPlayerRange: 20}} replace\n""")
+                            f"""setblock ~{i+1} ~ ~{j+1} spawner{spawner.generate_spawner_string(mob)} replace\n""")
                         maze_file.write(
-                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~1 ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                     else:
                         maze_file.write(
-                            f"fill ~{i+1} ~ ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:bedrock replace\n")
+                            f"fill ~{i+1} ~ ~{j+1} ~{i+1} ~3 ~{j+1} minecraft:obsidian replace\n")
                 else:
                     choice = random()
                     if choice < 0.01:
                         maze_file.write(
                             f"""setblock ~{i+1} ~ ~{j+1} chest{generate_chest()} replace\n""")
+                    elif choice < 0.05:
+                        maze_file.write(
+                            f"""setblock ~{i+1} ~ ~{j+1} torch replace\n""")
 
         maze_file.write(
             f"fill ~1 ~ ~3 ~3 ~3 ~3 air replace\n")
         maze_file.write(
-            f"fill ~{x} ~ ~{z-3} ~{x - 2} ~3 ~{z - 3} minecraft:glass replace\n")
+            f"fill ~{x} ~ ~{z-3} ~{x-1} ~3 ~{z - 3} minecraft:glass replace\n")
 
     with open(f"{name}_clear.mcfunction", 'w', encoding='utf-8') as clear_maze_file:
         x = len(output)
-        x_half = x // 2
         z = len(output[0])
-        z_half = z // 2
+
+        x_segments = x//20
+        z_segments = z//20
+
+        for x_seg in range(x_segments):
+            for z_seg in range(z_segments):
+                clear_maze_file.write(
+                    f"fill ~{x_seg * 20} ~-1 ~{z_seg * 20} ~{(x_seg + 1) * 20} ~4 ~{(z_seg + 1) * 20} air replace\n")
+                if (x_seg == 0):
+                    clear_maze_file.write(
+                        f"fill ~{x_segments * 20} ~-1 ~{z_seg * 20} ~{x} ~4 ~{(z_seg + 1) * 20} air replace\n")
+            clear_maze_file.write(
+                f"fill ~{x_seg * 20} ~-1 ~{z_segments * 20} ~{(x_seg + 1) * 20} ~4 ~{z} air replace\n")
         clear_maze_file.write(
-            f"fill ~1 ~ ~1 ~{x_half} ~3 ~{z_half} air replace\n")
-        clear_maze_file.write(
-            f"fill ~{x_half} ~ ~1 ~{x} ~3 ~{z_half} air replace\n")
-        clear_maze_file.write(
-            f"fill ~{x_half} ~ ~{z_half} ~{x} ~3 ~{z} air replace\n")
-        clear_maze_file.write(
-            f"fill ~1 ~ ~{z_half} ~{x_half} ~3 ~{z} air replace\n")
+            f"fill ~{x_segments * 20} ~-1 ~{z_segments * 20} ~{x} ~4 ~{z} air replace\n")
 
 
 if __name__ == '__main__':
